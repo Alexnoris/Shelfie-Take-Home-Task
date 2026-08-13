@@ -1,0 +1,106 @@
+id,title,author,alternate_titles,format
+1,The Hobbit,J.R.R. Tolkien,There and Back Again,Hardcover
+2,The Hobbit,J.R.R. Tolkien,,Paperback
+3,Harry Potter and the Philosopher's Stone,J.K. Rowling,Harry Potter and the Sorcerer's Stone,Paperback
+4,Harry Potter and the Chamber of Secrets,Rowling J.K.,,Hardcover
+5,Harry Potter and the Prisoner of Azkaban,Joanne Rowling,,Paperback
+6,Harry Potter and the Goblet of Fire,J. K. Rowling,,Mass Market
+7,Harry Potter and the Order of the Phoenix,J.K. Rowling,,Hardcover
+8,The Northern Lights,Philip Pullman,The Golden Compass,Paperback
+9,The Subtle Knife,Philip Pullman,,Paperback
+10,The Amber Spyglass,Philip Pullman,,Hardcover
+11,Twilight,Stephenie Meyer,,Paperback
+12,Twilight,William Gay,,Hardcover
+13,Nemesis,Isaac Asimov,,Paperback
+14,Nemesis,Jo Nesbø,,Paperback
+15,The Lord of the Rings,"Tolkien, J.R.R.",LOTR,Omnibus
+16,The Fellowship of the Ring,J.R.R. Tolkien,LOTR 1,Paperback
+17,The Two Towers,J. R. R. Tolkien,LOTR 2,Paperback
+18,The Return of the King,John Ronald Reuel Tolkien,LOTR 3,Paperback
+19,Dune,Frank Herbert,,Paperback
+20,Dune Messiah,Frank Herbert,,Paperback
+21,Children of Dune,Frank Herbert,,Hardcover
+22,God Emperor of Dune,Frank Herbert,,Paperback
+23,Foundation,Isaac Asimov,,Paperback
+24,Foundation and Empire,Isaac Asimov,,Paperback
+25,Second Foundation,Isaac Asimov,,Paperback
+26,The Foundation Trilogy,"Asimov, Isaac",,Omnibus
+27,One Hundred Years of Solitude,Gabriel García Márquez,,Paperback
+28,Love in the Time of Cholera,Gabriel Garcia Marquez,,Hardcover
+29,Chronicle of a Death Foretold,G. Garcia Marquez,,Paperback
+30,Crime and Punishment,Fyodor Dostoevsky,,Paperback
+31,The Brothers Karamazov,Fedor Dostoievski,,Hardcover
+32,Notes from Underground,F.M. Dostoevsky,,Paperback
+33,A Game of Thrones,"Martin, George R.R.",,Paperback
+34,A Clash of Kings,George R. R. Martin,,Mass Market
+35,A Storm of Swords,G.R.R. Martin,,Paperback
+36,The Shining,Stephen King,,Paperback
+37,The Shining,Stephen King,,Hardcover
+38,Doctor Sleep,Stephen King,Dr. Sleep,Paperback
+39,It,Stephen King,,Paperback
+40,Misery,S. King,,Mass Market
+41,The Stand,Stephen King,,Omnibus
+42,1984,George Orwell,Nineteen Eighty-Four,Paperback
+43,Animal Farm,"Orwell, George",,Paperback
+44,Pride and Prejudice,Jane Austen,,Hardcover
+45,Sense and Sensibility,Jane Austen,,Paperback
+46,Emma,J. Austen,,Paperback
+47,The Hunger Games,Suzanne Collins,,Paperback
+48,Catching Fire,Suzanne Collins,,Paperback
+49,Mockingjay,Suzanne Collins,,Hardcover
+50,The Hunger Games Trilogy,Suzanne Collins,,Omnibus
+51,The Lightning Thief,Rick Riordan,Percy Jackson 1,Paperback
+52,The Sea of Monsters,Rick Riordan,Percy Jackson 2,Paperback
+53,The Titan's Curse,Rick Riordan,Percy Jackson 3,Hardcover
+54,The Battle of the Labyrinth,Rick Riordan,Percy Jackson 4,Paperback
+55,The Last Olympian,R. Riordan,Percy Jackson 5,Paperback
+56,And Then There Were None,Agatha Christie,Ten Little Niggers; Ten Little Indians,Paperback
+57,Murder on the Orient Express,Agatha Christie,,Hardcover
+58,The Murder of Roger Ackroyd,"Christie, Agatha",,Paperback
+59,Death on the Nile,A. Christie,,Mass Market
+60,The Da Vinci Code,Dan Brown,,Paperback
+61,Angels & Demons,Dan Brown,Angels and Demons,Hardcover
+62,Inferno,Dan Brown,,Paperback
+63,Outliers,Malcolm Gladwell,,Paperback
+64,The Tipping Point,Malcolm Gladwell,,Hardcover
+65,Blink,M. Gladwell,,Paperback
+66,Sapiens: A Brief History of Humankind,Yuval Noah Harari,Sapiens,Paperback
+67,Homo Deus: A Brief History of Tomorrow,Yuval Noah Harari,Homo Deus,Hardcover
+68,21 Lessons for the 21st Century,Y.N. Harari,,Paperback
+69,The Alchemist,Paulo Coelho,,Paperback
+70,The Alchemist,Paulo Coelho,,Hardcover
+71,The Martian,Andy Weir,,Paperback
+72,Project Hail Mary,Andy Weir,,Hardcover
+73,Ready Player One,Ernest Cline,,Paperback
+74,Ready Player Two,Ernest Cline,,Hardcover
+75,Gone Girl,Gillian Flynn,,Paperback
+76,Sharp Objects,Gillian Flynn,,Paperback
+77,The Girl on the Train,Paula Hawkins,,Hardcover
+78,A Man Called Ove,Fredrik Backman,,Paperback
+79,Beartown,Fredrik Backman,,Paperback
+80,The Midnight Library,Matt Haig,,Hardcover
+81,Normal People,Sally Rooney,,Paperback
+82,Conversations with Friends,Sally Rooney,,Paperback
+83,The Seven Husbands of Evelyn Hugo,Taylor Jenkins Reid,,Paperback
+84,Daisy Jones & The Six,Taylor Jenkins Reid,Daisy Jones and The Six,Hardcover
+85,To Kill a Mockingbird,Harper Lee,,Paperback
+86,Go Set a Watchman,Harper Lee,,Hardcover
+87,The Great Gatsby,F. Scott Fitzgerald,,Paperback
+88,The Catcher in the Rye,J.D. Salinger,,Paperback
+89,Fahrenheit 451,Ray Bradbury,,Paperback
+90,The Handmaid's Tale,Margaret Atwood,,Paperback
+91,The Testaments,Margaret Atwood,,Hardcover
+92,Life of Pi,Yann Martel,,Paperback
+93,The Book Thief,Markus Zusak,,Hardcover
+94,The Kite Runner,Khaled Hosseini,,Paperback
+95,A Thousand Splendid Suns,Khaled Hosseini,,Paperback
+96,Educated,Tara Westover,,Hardcover
+97,Becoming,Michelle Obama,,Hardcover
+98,Born a Crime,Trevor Noah,,Paperback
+99,Thinking Fast and Slow,Daniel Kahneman,Thinking\, Fast and Slow,Paperback
+100,Atomic Habits,James Clear,,Hardcover
+101,Dune,Frank Herbert,,Mass Market
+102,The Hobbit,J.R.R. Tolkien,There and Back Again,Illustrated Edition
+103,Foundation,Isaac Asimov,,Hardcover
+104,1984,George Orwell,Nineteen Eighty-Four,Hardcover
+105,It,Stephen King,,Hardcover
