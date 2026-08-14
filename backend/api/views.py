@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser
 from thefuzz import fuzz
+import concurrent.futures
 
 from .models import Book
 from .serializers import BookSerializer
@@ -99,58 +100,99 @@ class ProcessShelfPhotoView(APIView):
                     status=status.HTTP_200_OK
                 )
 
-            final_results = []
             all_books = Book.objects.all()
+            if not all_books.exists():
+                return Response(
+                    {
+                        'message': 'No books in the catalog. Run: python manage.py load_catalog',
+                        'results': [],
+                    },
+                    status=status.HTTP_200_OK
+                )
 
-            # 3. Process each detected spine
-            for spine in cropped_spines:
-                # Hosted Routing: Send cropped image to VLM
-                extracted_data = extract_text_from_spine(spine)
-                detected_title = extracted_data.get('title', '')
-                detected_author = extracted_data.get('author', '')
+            final_results = []
+            vlm_errors = []
+            
+            # 3. Process all detected spines concurrently using ThreadPoolExecutor
+            # max_workers=10 handles up to 10 simultaneous HTTP requests to OpenRouter
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                # Map each execution to its future
+                future_to_spine = {
+                    executor.submit(extract_text_from_spine, spine): spine 
+                    for spine in cropped_spines
+                }
 
-                # Skip matching if VLM failed to read anything
-                if not detected_title and not detected_author:
-                    continue
+                # as_completed yields futures as soon as they finish, regardless of order
+                for future in concurrent.futures.as_completed(future_to_spine):
+                    try:
+                        extracted_data = future.result()
+                    except Exception as exc:
+                        vlm_errors.append(f'VLM execution failed: {exc}')
+                        continue
 
-                best_match = None
-                highest_score = 0
+                    detected_title = extracted_data.get('title', '')
+                    detected_author = extracted_data.get('author', '')
 
-                # 4. Fuzzy Matching Logic against the messy catalog
-                for book in all_books:
-                    title_score = 0
-                    if detected_title:
-                        title_score = fuzz.token_set_ratio(detected_title.lower(), book.title.lower())
-                        if book.alternate_titles:
-                            alt_score = fuzz.token_set_ratio(detected_title.lower(), book.alternate_titles.lower())
-                            title_score = max(title_score, alt_score)
+                    # Skip matching if VLM failed to read anything
+                    if not detected_title and not detected_author:
+                        vlm_errors.append(extracted_data.get('error') or 'No title or author could be read.')
+                        continue
 
-                    author_score = 0
-                    if detected_author and book.author:
-                        author_score = fuzz.token_set_ratio(detected_author.lower(), book.author.lower())
+                    best_match = None
+                    highest_score = 0
 
-                    # Calculate weighted confidence score
-                    if detected_title and detected_author:
-                        score = (title_score * 0.7) + (author_score * 0.3)
-                    else:
-                        score = title_score if detected_title else author_score
+                    # 4. Fuzzy Matching Logic against the messy catalog
+                    for book in all_books:
+                        title_score = 0
+                        if detected_title:
+                            title_score = fuzz.token_set_ratio(detected_title.lower(), book.title.lower())
+                            if book.alternate_titles:
+                                alt_score = fuzz.token_set_ratio(detected_title.lower(), book.alternate_titles.lower())
+                                title_score = max(title_score, alt_score)
 
-                    if score > highest_score:
-                        highest_score = score
-                        best_match = book
+                        author_score = 0
+                        if detected_author and book.author:
+                            author_score = fuzz.token_set_ratio(detected_author.lower(), book.author.lower())
 
-                # Append the result if the score is somewhat reliable (> 40%)
-                if best_match and highest_score > 40:
-                    final_results.append({
-                        'extracted_text': f"{detected_title} - {detected_author}",
-                        'matched_book': BookSerializer(best_match).data,
-                        'confidence_score': round(highest_score, 2)
-                    })
+                        # Calculate weighted confidence score
+                        if detected_title and detected_author:
+                            score = (title_score * 0.7) + (author_score * 0.3)
+                        else:
+                            score = title_score if detected_title else author_score
 
+                        if score > highest_score:
+                            highest_score = score
+                            best_match = book
+
+                    # Append the result if the score is somewhat reliable (> 40%)
+                    if best_match and highest_score > 40:
+                        final_results.append({
+                            'extracted_text': f"{detected_title} - {detected_author}",
+                            'matched_book': BookSerializer(best_match).data,
+                            'confidence_score': round(highest_score, 2)
+                        })
+
+           # Deduplicate results: Keep only the highest scoring match for each unique book ID
+            unique_results = {}
+            for result in final_results:
+                book_id = result['matched_book']['id']
+                current_score = result['confidence_score']
+                
+                # If the book is not in our dictionary, or if we found a better match for it, update it
+                if book_id not in unique_results or current_score > unique_results[book_id]['confidence_score']:
+                    unique_results[book_id] = result
+            
+            # Convert the dictionary back to a list
+            final_results = list(unique_results.values())
+            
             # Sort all detected books by confidence score descending
             final_results = sorted(final_results, key=lambda x: x['confidence_score'], reverse=True)
 
-            return Response({'results': final_results}, status=status.HTTP_200_OK)
+            # return the results
+            payload = {'results': final_results}
+            if vlm_errors:
+                payload['vlm_errors'] = vlm_errors
+            return Response(payload, status=status.HTTP_200_OK)
 
         finally:
             # Clean up the temporary file to prevent memory leaks

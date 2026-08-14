@@ -5,7 +5,8 @@
 A mobile application that turns a photo of a bookshelf into a structured personal library.
 
 ### Environment Variables
-Before running the backend, create a `.env` file in the `backend/` directory and add your Gemini API Key:
+Before running the backend, create a `.env` file in the `backend/` directory and add your OpenRouter API key:
 ```env
-GEMINI_API_KEY=your_gemini_api_key_here
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+OPENROUTER_MODEL=openai/gpt-4o-mini
 ```

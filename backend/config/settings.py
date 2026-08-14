@@ -32,7 +32,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY')
+OPENROUTER_MODEL = os.environ.get('OPENROUTER_MODEL', 'openai/gpt-4o-mini')
 
 # Application definition
 
