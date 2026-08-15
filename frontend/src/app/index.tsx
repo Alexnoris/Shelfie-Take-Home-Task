@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { createElement, useEffect, useState, useRef } from 'react';
 import {
     Alert,
     Linking,
@@ -12,6 +12,7 @@ import {
     ScrollView,
 } from 'react-native';
 import { CameraView, type CameraType, useCameraPermissions } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
 
 import { processShelfPhoto } from '../services/api';
 
@@ -37,6 +38,126 @@ type ProcessPhotoResponse = {
     vlm_errors?: string[];
     [key: string]: unknown;
 };
+
+function WelcomeScreen({
+    cameraAvailable,
+    busy,
+    statusText,
+    onTakePhoto,
+    onPickImage,
+}: {
+    cameraAvailable: boolean;
+    busy?: boolean;
+    statusText?: string | null;
+    onTakePhoto?: () => void;
+    onPickImage: (image: string | Blob) => void;
+}) {
+    return (
+        <View style={styles.permissionContainer}>
+            <Text style={styles.welcomeTitle}>Scan your bookshelf</Text>
+            <Text style={styles.welcomeSubtitle}>
+                {cameraAvailable
+                    ? 'Take a photo of your shelf, or pick one from your gallery. We’ll find the books and match them to the catalog.'
+                    : 'The camera isn’t available in this browser. Choose a shelf photo from your gallery instead.'} 
+            </Text>
+            {cameraAvailable && onTakePhoto ? (
+                <Pressable
+                    accessibilityRole="button"
+                    disabled={busy}
+                    hitSlop={16}
+                    onPress={onTakePhoto}
+                    style={({ pressed }) => [
+                        styles.permissionButton,
+                        styles.takePhotoButton,
+                        pressed && styles.permissionButtonPressed,
+                    ]}>
+                    <Text style={styles.permissionButtonText}>
+                        {busy ? 'Opening camera...' : 'Take a photo'}
+                    </Text>
+                </Pressable>
+            ) : null}
+            <GalleryButton
+                label="Choose from gallery"
+                variant={cameraAvailable ? 'secondary' : 'primary'}
+                onPicked={onPickImage}
+            />
+            {statusText ? <Text style={styles.statusText}>{statusText}</Text> : null}
+        </View>
+    );
+}
+
+function GalleryButton({
+    label,
+    onPicked,
+    variant = 'primary',
+}: {
+    label: string;
+    onPicked: (image: string | Blob) => void;
+    variant?: 'primary' | 'secondary' | 'camera';
+}) {
+    const pickNative = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            quality: 0.8,
+        });
+        if (!result.canceled && result.assets[0]?.uri) {
+            onPicked(result.assets[0].uri);
+        }
+    };
+
+    const buttonStyle =
+        variant === 'camera'
+            ? styles.galleryButton
+            : variant === 'secondary'
+              ? [styles.permissionButton, styles.secondaryPermissionButton]
+              : styles.permissionButton;
+    const labelStyle =
+        variant === 'camera'
+            ? styles.galleryButtonText
+            : variant === 'secondary'
+              ? styles.secondaryPermissionButtonText
+              : styles.permissionButtonText;
+
+    if (Platform.OS === 'web') {
+        return (
+            <View style={[buttonStyle, styles.galleryHitArea]}>
+                <Text style={labelStyle}>{label}</Text>
+                {createElement('input', {
+                    type: 'file',
+                    accept: 'image/*',
+                    onChange: (event: { target: HTMLInputElement }) => {
+                        const file = event.target.files?.[0];
+                        event.target.value = '';
+                        if (file) {
+                            onPicked(file);
+                        }
+                    },
+                    style: {
+                        position: 'absolute',
+                        left: 0,
+                        top: 0,
+                        width: '100%',
+                        height: '100%',
+                        margin: 0,
+                        opacity: 0,
+                        cursor: 'pointer',
+                        fontSize: 0,
+                        appearance: 'none',
+                    },
+                })}
+            </View>
+        );
+    }
+
+    return (
+        <Pressable
+            accessibilityRole="button"
+            onPress={pickNative}
+            style={({ pressed }) => [buttonStyle, pressed && styles.permissionButtonPressed]}>
+            <Text style={labelStyle}>{label}</Text>
+        </Pressable>
+    );
+}
 
 function isWebCameraSupported() {
     if (Platform.OS !== 'web') {
@@ -101,13 +222,25 @@ export default function IndexScreen() {
     const cameraRef = useRef<CameraView>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [apiResponse, setApiResponse] = useState<ProcessPhotoResponse | null>(null);
+    const [cameraArmed, setCameraArmed] = useState(false);
+    const [showMenu, setShowMenu] = useState(false);
+
+    useEffect(() => {
+        if (!permission?.granted) {
+            setCameraArmed(false);
+            return;
+        }
+
+        const timer = setTimeout(() => setCameraArmed(true), 800);
+        return () => clearTimeout(timer);
+    }, [permission?.granted]);
 
     async function handleGrantPermission() {
         setBusy(true);
         setStatusText(
             Platform.OS === 'web'
-                ? 'Look at the top of Safari and allow the camera.'
-                : 'Waiting for the system permission dialog...'
+                ? 'Safari will ask for camera access at the top of the screen.'
+                : 'Your phone will ask for camera access next.'
         );
 
         try {
@@ -116,13 +249,9 @@ export default function IndexScreen() {
                 return;
             }
 
-            if (Platform.OS === 'web') {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                stream.getTracks().forEach((track) => track.stop());
-            }
-
             const result = await requestPermission();
             if (result.granted) {
+                setShowMenu(false);
                 setStatusText(null);
                 return;
             }
@@ -153,15 +282,10 @@ export default function IndexScreen() {
         }
     }
 
-    const takePicture = async () => {
-        if (!cameraRef.current || isAnalyzing) return;
-
+    const analyzeImage = async (image: string | Blob) => {
+        setIsAnalyzing(true);
         try {
-            const photo = await cameraRef.current.takePictureAsync({ base64: false });
-            if (!photo) return;
-
-            setIsAnalyzing(true);
-            const response = await processShelfPhoto(photo.uri);
+            const response = await processShelfPhoto(image);
             if (response?.vlm_errors?.length) {
                 console.warn('Vision errors:', response.vlm_errors);
             }
@@ -174,39 +298,18 @@ export default function IndexScreen() {
         }
     };
 
-    if (!isWebCameraSupported()) {
-        return (
-            <View style={styles.permissionContainer}>
-                <Text style={styles.message}>Camera is blocked in this browser</Text>
-            </View>
-        );
-    }
+    const takePicture = async () => {
+        if (!cameraArmed || !cameraRef.current || isAnalyzing) return;
 
-    if (!permission) {
-        return <View style={styles.container} />;
-    }
-
-    if (!permission.granted) {
-        return (
-            <View style={styles.permissionContainer}>
-                <Text style={styles.message}>We need your permission to show the camera</Text>
-                <Pressable
-                    accessibilityRole="button"
-                    disabled={busy}
-                    hitSlop={16}
-                    onPress={handleGrantPermission}
-                    style={({ pressed }) => [
-                        styles.permissionButton,
-                        pressed && styles.permissionButtonPressed,
-                    ]}>
-                    <Text style={styles.permissionButtonText}>
-                        {busy ? 'Requesting...' : 'Grant Permission'}
-                    </Text>
-                </Pressable>
-                {statusText ? <Text style={styles.statusText}>{statusText}</Text> : null}
-            </View>
-        );
-    }
+        try {
+            const photo = await cameraRef.current.takePictureAsync({ base64: false });
+            if (!photo) return;
+            await analyzeImage(photo.uri);
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Error', 'Could not take the photo. Try again.');
+        }
+    };
 
     if (isAnalyzing) {
         return (
@@ -239,12 +342,54 @@ export default function IndexScreen() {
                         ))
                     )}
                 </ScrollView>
-                <TouchableOpacity
-                    style={styles.retryButton}
-                    onPress={() => setApiResponse(null)}>
-                    <Text style={styles.retryButtonText}>Scan again</Text>
-                </TouchableOpacity>
+                <View style={styles.resultsActions}>
+                    <TouchableOpacity
+                        style={styles.retryButton}
+                        onPress={() => {
+                            setShowMenu(false);
+                            setApiResponse(null);
+                        }}>
+                        <Text style={styles.retryButtonText}>Scan again</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.menuButton}
+                        onPress={() => {
+                            setApiResponse(null);
+                            setShowMenu(true);
+                        }}>
+                        <Text style={styles.menuButtonText}>Back to menu</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
+        );
+    }
+
+    if (!isWebCameraSupported()) {
+        return (
+            <WelcomeScreen
+                cameraAvailable={false}
+                onPickImage={analyzeImage}
+            />
+        );
+    }
+
+    if (!permission) {
+        return <View style={styles.container} />;
+    }
+
+    if (showMenu || !permission.granted) {
+        return (
+            <WelcomeScreen
+                cameraAvailable
+                busy={busy}
+                statusText={statusText}
+                onTakePhoto={
+                    permission.granted
+                        ? () => setShowMenu(false)
+                        : handleGrantPermission
+                }
+                onPickImage={analyzeImage}
+            />
         );
     }
 
@@ -253,9 +398,19 @@ export default function IndexScreen() {
             <CameraView ref={cameraRef} style={styles.camera} facing={facing} />
             <View style={styles.overlay} pointerEvents="box-none">
                 <View style={styles.bottomControls}>
-                    <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
-                        <View style={styles.captureButtonInner} />
-                    </TouchableOpacity>
+                    <Text style={styles.cameraHint}>Line up the bookshelf, then tap the shutter</Text>
+                    {cameraArmed ? (
+                        <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
+                            <View style={styles.captureButtonInner} />
+                        </TouchableOpacity>
+                    ) : (
+                        <View style={styles.captureButtonPlaceholder} />
+                    )}
+                    <GalleryButton
+                        label="Choose from gallery"
+                        variant="camera"
+                        onPicked={analyzeImage}
+                    />
                 </View>
             </View>
         </View>
@@ -275,6 +430,7 @@ const styles = StyleSheet.create({
     bottomControls: {
         width: '100%',
         alignItems: 'center',
+        gap: 16,
     },
     captureButton: {
         width: 70,
@@ -289,6 +445,33 @@ const styles = StyleSheet.create({
         height: 54,
         borderRadius: 27,
         backgroundColor: '#ffffff',
+    },
+    galleryButton: {
+        backgroundColor: 'rgba(0, 0, 0, 0.55)',
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        minHeight: 44,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    galleryHitArea: {
+        position: 'relative',
+        overflow: 'hidden',
+        alignSelf: 'center',
+    },
+    takePhotoButton: {
+        position: 'relative',
+        zIndex: 2,
+    },
+    captureButtonPlaceholder: {
+        width: 70,
+        height: 70,
+    },
+    galleryButtonText: {
+        color: '#ffffff',
+        fontSize: 16,
+        fontWeight: '600',
     },
     loadingBox: {
         backgroundColor: 'rgba(0,0,0,0.7)',
@@ -379,22 +562,55 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#111',
     },
+    resultsActions: {
+        gap: 12,
+        marginVertical: 20,
+    },
     retryButton: {
         backgroundColor: '#208AEF',
         padding: 15,
         borderRadius: 8,
         alignItems: 'center',
-        marginVertical: 20,
     },
     retryButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+    menuButton: {
+        backgroundColor: '#F0F0F3',
+        padding: 15,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    menuButtonText: { color: '#111111', fontSize: 16, fontWeight: 'bold' },
     permissionContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 24,
+        paddingHorizontal: 28,
         backgroundColor: '#ffffff',
     },
-    message: { textAlign: 'center', paddingBottom: 16, fontSize: 18, fontWeight: '600', color: '#000000' },
+    welcomeTitle: {
+        textAlign: 'center',
+        fontSize: 28,
+        fontWeight: '700',
+        color: '#111111',
+        marginBottom: 12,
+    },
+    welcomeSubtitle: {
+        textAlign: 'center',
+        fontSize: 16,
+        lineHeight: 24,
+        color: '#60646C',
+        maxWidth: 360,
+        marginBottom: 28,
+    },
+    cameraHint: {
+        color: '#ffffff',
+        fontSize: 14,
+        textAlign: 'center',
+        marginBottom: 4,
+        textShadowColor: 'rgba(0, 0, 0, 0.6)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 3,
+    },
     permissionButton: {
         backgroundColor: '#208AEF',
         paddingVertical: 14,
@@ -407,5 +623,11 @@ const styles = StyleSheet.create({
     },
     permissionButtonPressed: { opacity: 0.7 },
     permissionButtonText: { color: '#ffffff', fontWeight: '600', fontSize: 16 },
+    secondaryPermissionButton: {
+        backgroundColor: '#F0F0F3',
+        marginTop: 12,
+        zIndex: 1,
+    },
+    secondaryPermissionButtonText: { color: '#111111', fontWeight: '600', fontSize: 16 },
     statusText: { marginTop: 16, textAlign: 'center', color: '#60646C', maxWidth: 360, lineHeight: 22 },
 });
