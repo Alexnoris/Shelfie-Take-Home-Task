@@ -74,6 +74,8 @@ class ProcessShelfPhotoView(APIView):
     Main endpoint. Receives a photo of a bookshelf, detects spines locally,
     reads text via hosted VLM, and returns matches sorted by confidence.
     """
+    authentication_classes = []
+    permission_classes = []
     parser_classes = [MultiPartParser]
 
     def post(self, request):
