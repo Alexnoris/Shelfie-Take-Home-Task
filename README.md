@@ -38,16 +38,42 @@ You should see something like `Python 3.12.x` or `Python 3.13.x`.
 
 ### 0.2 Node.js 20 or newer (this also installs npm)
 
+You can install it from the website **or** from the terminal.
+
+**Option A — website**
+
 1. Go to [https://nodejs.org/](https://nodejs.org/)
 2. Install the **LTS** version.
-3. In the same terminal, type:
+
+**Option B — terminal**
+
+**Windows (PowerShell):**
+
+```powershell
+winget install OpenJS.NodeJS.LTS
+```
+
+**Mac (Homebrew):**
+
+```bash
+brew install node
+```
+
+**Linux (Debian/Ubuntu):**
+
+```bash
+sudo apt update
+sudo apt install nodejs npm
+```
+
+After installing, **close the terminal and open a new one**, then check:
 
 ```bash
 node --version
 npm --version
 ```
 
-Both commands should print a version number.
+Both commands should print a version number. `node` should be **v20** or newer.
 
 ### 0.3 Git (to download the project)
 
