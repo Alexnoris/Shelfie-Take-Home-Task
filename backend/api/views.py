@@ -12,6 +12,21 @@ from .serializers import BookSerializer
 from .vision_service import detect_book_spines
 from .vlm_service import extract_text_from_spine
 
+
+class BookListView(APIView):
+    """Returns the catalog so clients can see which books we can detect."""
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request):
+        books = Book.objects.all().order_by('title', 'author', 'format')
+        serialized = BookSerializer(books, many=True).data
+        return Response(
+            {'count': len(serialized), 'books': serialized},
+            status=status.HTTP_200_OK,
+        )
+
+
 class BookMatchView(APIView):
     """
     Receives extracted text (title and optional author) from the vision model

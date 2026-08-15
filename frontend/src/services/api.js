@@ -77,6 +77,16 @@ async function appendImage(formData, image) {
   });
 }
 
+export const fetchCatalog = async () => {
+  const response = await fetch('/api/books');
+
+  if (!response.ok) {
+    throw new Error(`Server returned status: ${response.status}`);
+  }
+
+  return response.json();
+};
+
 export const processShelfPhoto = async (image) => {
   const formData = new FormData();
   await appendImage(formData, image);

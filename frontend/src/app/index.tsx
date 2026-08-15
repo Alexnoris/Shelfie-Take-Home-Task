@@ -2,10 +2,12 @@ import React, { createElement, useEffect, useState, useRef } from 'react';
 import {
     Alert,
     Linking,
+    Modal,
     Platform,
     Pressable,
     StyleSheet,
     Text,
+    TextInput,
     View,
     ActivityIndicator,
     TouchableOpacity,
@@ -14,7 +16,7 @@ import {
 import { CameraView, type CameraType, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 
-import { processShelfPhoto } from '../services/api';
+import { fetchCatalog, processShelfPhoto } from '../services/api';
 
 type MatchedBook = {
     id?: number;
@@ -52,13 +54,23 @@ function WelcomeScreen({
     onTakePhoto?: () => void;
     onPickImage: (image: string | Blob) => void;
 }) {
+    const [catalogOpen, setCatalogOpen] = useState(false);
+
     return (
         <View style={styles.permissionContainer}>
+            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="View books we can detect"
+                hitSlop={12}
+                onPress={() => setCatalogOpen(true)}
+                style={({ pressed }) => [styles.infoButton, pressed && styles.permissionButtonPressed]}>
+                <Text style={styles.infoButtonText}>i</Text>
+            </Pressable>
             <Text style={styles.welcomeTitle}>Scan your bookshelf</Text>
             <Text style={styles.welcomeSubtitle}>
                 {cameraAvailable
                     ? 'Take a photo of your shelf, or pick one from your gallery. We’ll find the books and match them to the catalog.'
-                    : 'The camera isn’t available in this browser. Choose a shelf photo from your gallery instead.'} 
+                    : 'The camera isn’t available in this browser. Choose a shelf photo from your gallery instead.'}
             </Text>
             {cameraAvailable && onTakePhoto ? (
                 <Pressable
@@ -82,7 +94,112 @@ function WelcomeScreen({
                 onPicked={onPickImage}
             />
             {statusText ? <Text style={styles.statusText}>{statusText}</Text> : null}
+            <CatalogModal visible={catalogOpen} onClose={() => setCatalogOpen(false)} />
         </View>
+    );
+}
+
+function CatalogModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+    const [books, setBooks] = useState<MatchedBook[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [query, setQuery] = useState('');
+    const [loaded, setLoaded] = useState(false);
+
+    useEffect(() => {
+        if (!visible || loaded) {
+            return;
+        }
+
+        let cancelled = false;
+        setLoading(true);
+        setError(null);
+
+        fetchCatalog()
+            .then((data: { books?: MatchedBook[] }) => {
+                if (!cancelled) {
+                    setBooks(data.books ?? []);
+                    setLoaded(true);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setError('Could not load the catalog.');
+                }
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [visible, loaded]);
+
+    const filtered = books.filter((book) => {
+        const haystack = `${book.title ?? ''} ${book.author ?? ''} ${book.alternate_titles ?? ''}`.toLowerCase();
+        return haystack.includes(query.trim().toLowerCase());
+    });
+
+    return (
+        <Modal animationType="fade" transparent visible={visible} onRequestClose={onClose}>
+            <View style={styles.modalBackdrop}>
+                <View style={styles.modalCard}>
+                    <View style={styles.modalHeader}>
+                        <View style={styles.modalHeaderText}>
+                            <Text style={styles.modalTitle}>Books we can detect</Text>
+                            <Text style={styles.modalSubtitle}>
+                                {loaded
+                                    ? `${books.length} titles in the catalog. Scan a shelf and we’ll match these books.`
+                                    : 'Scan a shelf photo and we’ll match these catalog titles.'}
+                            </Text>
+                        </View>
+                        <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel="Close catalog"
+                            hitSlop={8}
+                            onPress={onClose}
+                            style={styles.modalClose}>
+                            <Text style={styles.modalCloseText}>×</Text>
+                        </Pressable>
+                    </View>
+
+                    <TextInput
+                        autoCorrect={false}
+                        placeholder="Search title or author"
+                        placeholderTextColor="#8A8D93"
+                        style={styles.modalSearch}
+                        value={query}
+                        onChangeText={setQuery}
+                    />
+
+                    {loading ? (
+                        <View style={styles.modalStatus}>
+                            <ActivityIndicator color="#208AEF" />
+                        </View>
+                    ) : error ? (
+                        <Text style={styles.modalError}>{error}</Text>
+                    ) : (
+                        <ScrollView style={styles.modalList} keyboardShouldPersistTaps="handled">
+                            {filtered.length === 0 ? (
+                                <Text style={styles.modalEmpty}>No titles match that search.</Text>
+                            ) : (
+                                filtered.map((book) => (
+                                    <View key={`${book.id}-${book.format}`} style={styles.catalogRow}>
+                                        <Text style={styles.catalogTitle}>{book.title || 'Untitled'}</Text>
+                                        <Text style={styles.catalogMeta}>
+                                            {[book.author, book.format].filter(Boolean).join(' · ')}
+                                        </Text>
+                                    </View>
+                                ))
+                            )}
+                        </ScrollView>
+                    )}
+                </View>
+            </View>
+        </Modal>
     );
 }
 
@@ -586,6 +703,122 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 28,
         backgroundColor: '#ffffff',
+    },
+    infoButton: {
+        position: 'absolute',
+        top: 24,
+        right: 24,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        borderWidth: 2,
+        borderColor: '#208AEF',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#ffffff',
+        zIndex: 3,
+    },
+    infoButtonText: {
+        color: '#208AEF',
+        fontSize: 18,
+        fontWeight: '700',
+        fontStyle: 'italic',
+        lineHeight: 20,
+    },
+    modalBackdrop: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+        justifyContent: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 40,
+    },
+    modalCard: {
+        backgroundColor: '#ffffff',
+        borderRadius: 16,
+        maxHeight: '90%',
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 16,
+        width: '100%',
+        maxWidth: 480,
+        alignSelf: 'center',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 12,
+        marginBottom: 16,
+    },
+    modalHeaderText: {
+        flex: 1,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#111111',
+    },
+    modalSubtitle: {
+        marginTop: 6,
+        fontSize: 14,
+        lineHeight: 20,
+        color: '#60646C',
+    },
+    modalClose: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#F0F0F3',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalCloseText: {
+        fontSize: 22,
+        color: '#111111',
+        lineHeight: 24,
+    },
+    modalSearch: {
+        borderWidth: 1,
+        borderColor: '#E4E5E8',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        fontSize: 15,
+        color: '#111111',
+        marginBottom: 12,
+    },
+    modalList: {
+        maxHeight: 420,
+    },
+    modalStatus: {
+        paddingVertical: 32,
+        alignItems: 'center',
+    },
+    modalError: {
+        paddingVertical: 24,
+        textAlign: 'center',
+        color: '#C2410C',
+        fontSize: 14,
+    },
+    modalEmpty: {
+        paddingVertical: 24,
+        textAlign: 'center',
+        color: '#60646C',
+        fontSize: 14,
+    },
+    catalogRow: {
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ECEDEF',
+    },
+    catalogTitle: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#111111',
+    },
+    catalogMeta: {
+        marginTop: 4,
+        fontSize: 13,
+        color: '#60646C',
     },
     welcomeTitle: {
         textAlign: 'center',
