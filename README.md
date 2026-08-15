@@ -15,37 +15,43 @@ You will need **two programs running at the same time**:
 1. The **backend** (Django) — analyzes the photo
 2. The **frontend** (Expo) — the screen you use in the browser
 
-Please follow these steps sequentially to ensure a smooth local setup. If you already have Python, Node, Git, and an OpenRouter key, you can jump to **Quick start**.
+Please follow these steps sequentially to ensure a smooth local setup. If you already have **Python 3.12**, Node, Git, and an OpenRouter key, you can jump to **Quick start**.
 
 ## Required versions (read this first)
 
-This project will fail if the versions are too old.
+This project will fail if the versions are wrong. **Python must be 3.12** (for example `3.12.8`). 3.11, 3.13, and other versions are not supported.
 
 | Tool | Required version | How to check |
 | --- | --- | --- |
-| **Python** | **3.12 or newer** (3.12 or 3.13). Not 3.9, 3.10, or 3.11. | `python --version` or, on Mac/Linux, `python3 --version` |
+| **Python** | **3.12 only** (3.12.x). Not 3.11. Not 3.13. | Windows: `py -3.12 --version` · Mac/Linux: `python3.12 --version` |
 | **Node.js** | **20 or newer** (20 LTS or 22 LTS). Not 16 or 18. | `node --version` |
 | **npm** | Comes with Node. | `npm --version` |
 
-**Mac / Linux — `python` vs `python3`:**  
-On a Mac, `python` often does nothing, or it is an old version. Use **`python3`** (and if needed **`pip3`**) unless you already have `(venv)` active. After the virtual environment is active, `python` and `pip` usually work too.
+**You can keep another Python installed.** Install 3.12 next to it, then create the virtual environment with **that** 3.12 interpreter (`py -3.12` on Windows, `python3.12` on Mac). Do not use a plain `python` / `python3` if that command is not 3.12.
+
+**Mac / Linux — `python` vs `python3.12`:**  
+Use **`python3.12`** (Windows: **`py -3.12`**) only to **create** the venv. After you see `(venv)` in the prompt, use **`python`** and **`pip`**. You do not need to type `python3.12` again.
 
 Check **before** you continue:
 
 ```bash
-python3 --version
+py -3.12 --version
+```
+
+```bash
+python3.12 --version
 node --version
 ```
 
-You want something like `Python 3.12.x` or `Python 3.13.x`, and `v20.x.x` or `v22.x.x`. If Python is `3.11` or lower, or Node is `v18` or lower, install the versions above first. Do not keep going.
+You want **`Python 3.12.x`** and Node `v20.x.x` or `v22.x.x`. If Python is not 3.12, install 3.12 first (Step 0.1).
 
 ---
 
 ## Quick start (if you already have the requirements)
 
-Use this if you already have **Python 3.12+**, **Node 20+**, **Git**, and an **OpenRouter API key**. If not, skip to **Step 0**.
+Use this if you already have **Python 3.12**, **Node 20+**, **Git**, and an **OpenRouter API key**. If not, skip to **Step 0**.
 
-You still need **two terminals**. On Mac/Linux, use `python3` if `python` is not found.
+You still need **two terminals**. Create the venv with **Python 3.12**, even if another Python is already installed.
 
 **Terminal 1 — backend**
 
@@ -54,20 +60,36 @@ git clone https://github.com/Alexnoris/Shelfie-Take-Home-Task.git
 cd Shelfie-Take-Home-Task/backend
 ```
 
-Windows:
+Windows (uses the 3.12 installer / `py` launcher):
 
 ```powershell
-python -m venv venv
+py -3.12 --version
+py -3.12 -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
+If `py -3.12` is missing, install 3.12 without removing your current Python:
+
+```powershell
+py install 3.12
+```
+
+Then run the `venv` commands again.
+
 Mac / Linux:
 
 ```bash
-python3 -m venv venv
+python3.12 --version
+python3.12 -m venv venv
 source venv/bin/activate
-python3 -m pip install -r requirements.txt
+pip install -r requirements.txt
+```
+
+If `python3.12` is missing on Mac:
+
+```bash
+brew install python@3.12
 ```
 
 Create `backend/.env` with:
@@ -77,15 +99,13 @@ OPENROUTER_API_KEY=paste_your_key_here
 OPENROUTER_MODEL=openai/gpt-4o-mini
 ```
 
-Then:
+Then (venv still active — now just `python`, not `python3.12`):
 
 ```bash
 python manage.py migrate
 python manage.py load_catalog
 python manage.py runserver
 ```
-
-(Mac / Linux: `python3 manage.py ...` if needed.)
 
 Leave this terminal running.
 
@@ -96,6 +116,8 @@ cd Shelfie-Take-Home-Task/frontend
 npm install
 npx expo start --tunnel
 ```
+
+If the terminal says **ngrok tunnel took too long to connect**, run `npx expo start --tunnel` again.
 
 Copy the `https://` URL and paste it in your **phone** browser. That is the recommended way to use the app.
 
@@ -111,33 +133,69 @@ If anything fails, please use the full steps below.
 
 You only do this once on a computer.
 
-### 0.1 Python 3.12 or newer
+### 0.1 Python 3.12 only (required)
 
-Django 6 in this project needs **Python 3.12+**. Python 3.11 or older will not work.
+This app needs **Python 3.12.x**. It does not work with 3.11, 3.13, or other versions.
 
-1. Go to [https://www.python.org/downloads/](https://www.python.org/downloads/)
-2. Download **Python 3.12** or **3.13** (not 3.10 / 3.11).
-3. **Windows:** on the installer, check **Add python.exe to PATH**.
-4. Open a terminal (PowerShell on Windows, Terminal on Mac) and check the version.
+You do **not** have to uninstall the Python you already have. Install 3.12 next to it, then always create the project venv with 3.12.
 
-**Windows:**
+**Windows — if Python is already installed**
+
+1. Open PowerShell and see which versions you have:
 
 ```powershell
-python --version
+py --list
 ```
 
-**Mac / Linux** (try `python3` first):
+2. If 3.12 is missing, install it (this does not replace your other Python):
+
+```powershell
+py install 3.12
+```
+
+If `py install` is not available, use:
+
+```powershell
+winget install Python.Python.3.12
+```
+
+Or download **3.12** from [https://www.python.org/downloads/release/python-31210/](https://www.python.org/downloads/release/python-31210/) and check **Add python.exe to PATH**.
+
+3. Confirm 3.12 (you must see `Python 3.12.x`):
+
+```powershell
+py -3.12 --version
+```
+
+**Mac — if Python is already installed**
+
+1. Check whether 3.12 exists:
 
 ```bash
-python3 --version
+python3.12 --version
 ```
 
-If `python3` is not found, try `python --version`.
+2. If it is missing, install 3.12 with Homebrew (this does not remove your other Python):
 
-You must see **Python 3.12.x** or **Python 3.13.x**.  
-If you see `Python 2.7`, `Python 3.9`, `Python 3.10`, or `Python 3.11`, install a newer Python and check again.
+```bash
+brew install python@3.12
+```
 
-On Mac, from this point on, if a command with `python` fails, run the same command with **`python3`**.
+You may need:
+
+```bash
+brew link python@3.12
+```
+
+Or download **macOS 64-bit universal2 installer** for **3.12** from [python.org](https://www.python.org/downloads/release/python-31210/).
+
+3. Confirm 3.12:
+
+```bash
+python3.12 --version
+```
+
+You must see **Python 3.12.x**. If you see 3.11 or 3.13, that interpreter is the wrong one. Keep going only with `py -3.12` (Windows) or `python3.12` (Mac).
 
 ---
 
@@ -228,7 +286,7 @@ You are in the right place if you see folders named `backend` and `frontend`, pl
 
 Keep this terminal open until the end. All commands in this step start from the project folder.
 
-**Mac / Linux reminder:** if `python` is not found, use `python3`. If `pip` is not found, use `pip3` or `python3 -m pip`.
+**Important:** `py -3.12` / `python3.12` are only for creating the venv. After `(venv)` is active, use `python` and `pip` on every OS.
 
 ### 2.1 Go into the backend folder
 
@@ -238,13 +296,20 @@ cd backend
 
 ### 2.2 Create a virtual environment
 
-This is a private Python folder for this project only.
+This is a private Python folder for this project only. Create it with **Python 3.12**, even if `python --version` shows something else.
 
 **Windows (PowerShell):**
 
 ```powershell
-python -m venv venv
+py -3.12 --version
+py -3.12 -m venv venv
 .\venv\Scripts\Activate.ps1
+```
+
+Confirm the venv is 3.12:
+
+```powershell
+python --version
 ```
 
 If Windows says the script is disabled, run this **once**, then run `Activate.ps1` again:
@@ -253,18 +318,24 @@ If Windows says the script is disabled, run this **once**, then run `Activate.ps
 Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 ```
 
-**Mac / Linux** (use `python3` here):
+If `py -3.12` is not found, go back to Step 0.1 and run `py install 3.12`.
+
+**Mac / Linux** (use **`python3.12`**):
 
 ```bash
-python3 -m venv venv
+python3.12 --version
+python3.12 -m venv venv
 source venv/bin/activate
+python --version
 ```
 
-If `python3` is not found, try `python -m venv venv` only if `python --version` already showed 3.12+.
+`python --version` inside `(venv)` must say **3.12.x**. If it does not, delete the `venv` folder and create it again with `python3.12 -m venv venv`.
+
+If `python3.12` is not found, go back to Step 0.1 (`brew install python@3.12`).
 
 The start of your terminal line should now show `(venv)`. If you do not see `(venv)`, the environment is not active. Stop and fix that before continuing.
 
-Inside `(venv)`, `python` and `python3` should both be fine. If `pip` fails on Mac, use `pip3` or `python3 -m pip`.
+Inside `(venv)`, use **`python`** and **`pip`** from now on. You do not need `python3.12` or `py -3.12` again unless you recreate the venv.
 
 ### 2.3 Install Python packages
 
@@ -272,18 +343,6 @@ This download is large. It can take several minutes. Stay on this step until it 
 
 ```bash
 pip install -r requirements.txt
-```
-
-**Mac / Linux:** if `pip` is not found:
-
-```bash
-pip3 install -r requirements.txt
-```
-
-or:
-
-```bash
-python3 -m pip install -r requirements.txt
 ```
 
 Wait until the command ends and you see the prompt again.
@@ -326,25 +385,12 @@ python manage.py migrate
 python manage.py load_catalog
 ```
 
-**Mac / Linux:** if `python` is not found, use:
-
-```bash
-python3 manage.py migrate
-python3 manage.py load_catalog
-```
-
 The second command should say that the books were loaded successfully.
 
 ### 2.6 Start the backend
 
 ```bash
 python manage.py runserver
-```
-
-**Mac / Linux:** if that fails, use:
-
-```bash
-python3 manage.py runserver
 ```
 
 Leave this terminal running. Do not close it.
@@ -392,6 +438,12 @@ npx expo start --tunnel
 ```
 
 Wait until the terminal says the tunnel is ready. You should see a URL that starts with `https://` and looks like `https://xxxx.exp.direct`.
+
+If you see **ngrok tunnel took too long to connect** (or the tunnel hangs), press `Ctrl+C` and run the same command again:
+
+```bash
+npx expo start --tunnel
+```
 
 **Recommended:** copy that `https://xxxx.exp.direct` URL and paste it in your **phone** browser (Safari on iPhone, Chrome on Android). That is the best way to use the camera and the gallery.
 
@@ -457,10 +509,10 @@ Mac / Linux:
 ```bash
 cd backend
 source venv/bin/activate
-python3 manage.py runserver
+python manage.py runserver
 ```
 
-If `python3` is not found inside `(venv)`, use `python manage.py runserver`.
+If `python --version` is not **3.12.x** after activate, recreate the venv with `python3.12 -m venv venv`, then activate again and use `python` as usual.
 
 **Terminal 2 — frontend**
 
@@ -469,7 +521,7 @@ cd frontend
 npx expo start --tunnel
 ```
 
-Wait for the `https://` URL, copy it, and paste it in your **phone** browser. That is the recommended way to use the app.
+Wait for the `https://` URL, copy it, and paste it in your **phone** browser. That is the recommended way to use the app. If it says **ngrok tunnel took too long to connect**, press `Ctrl+C` and run `npx expo start --tunnel` again.
 
 ---
 
@@ -478,20 +530,20 @@ Wait for the `https://` URL, copy it, and paste it in your **phone** browser. Th
 **I do not see `(venv)`**  
 Go to the `backend` folder and activate it again (`Activate.ps1` on Windows, `source venv/bin/activate` on Mac/Linux).
 
-**`python` is not found (especially on Mac)**  
-Use `python3` instead (`python3 --version`, `python3 -m venv venv`, `python3 manage.py runserver`). The same idea applies to `pip` → `pip3` or `python3 -m pip`.
+**`python` is not found**  
+Activate the venv first (`.\venv\Scripts\Activate.ps1` or `source venv/bin/activate`). Inside `(venv)` the command is just `python`. Use `python3.12` / `py -3.12` only when **creating** the venv.
 
-**My Python or Node version is too old**  
-Python must be **3.12+**. Node must be **20+**. Check with `python3 --version` and `node --version`. Install the versions in Step 0, then open a **new** terminal.
+**My Python is not 3.12**  
+This app needs **Python 3.12 only**. Check with `py -3.12 --version` (Windows) or `python3.12 --version` (Mac). Install 3.12 next to your current Python (`py install 3.12` or `brew install python@3.12`), then create a **new** venv with that interpreter.
 
 **`pip install` fails**  
-Confirm Python is 3.12 or 3.13 (`python3 --version`), delete the `backend/venv` folder, create it again, activate it, and run `pip install -r requirements.txt` (or `python3 -m pip install -r requirements.txt`) once more. You need a stable internet connection.
+Confirm the venv is 3.12 (`python --version` after activate). Delete `backend/venv`, create it again with `py -3.12 -m venv venv` or `python3.12 -m venv venv`, activate it, and run `pip install -r requirements.txt` once more. You need a stable internet connection.
 
 **The app says it could not process the image, or the catalog does not load**  
 The backend is not running. Go back to Step 2.6.
 
 **The app says there are no books in the catalog**  
-In the backend terminal: stop the server with `Ctrl+C`, activate `(venv)`, run `python manage.py load_catalog` (on Mac: `python3 manage.py load_catalog`), then `python manage.py runserver` again.
+In the backend terminal: stop the server with `Ctrl+C`, activate `(venv)`, run `python manage.py load_catalog`, then `python manage.py runserver` again.
 
 **Photos are analyzed but titles are empty / no good matches**  
 Check that `backend/.env` has a real `OPENROUTER_API_KEY`. Stop the backend with `Ctrl+C` and start it again so it reads the file.
@@ -500,7 +552,7 @@ Check that `backend/.env` has a real `OPENROUTER_API_KEY`. Stop the backend with
 Open the `https://` tunnel URL from `npx expo start --tunnel`. HTTP links (`localhost` or `192.168...`) block the camera.
 
 **The tunnel is slow or does not connect**  
-Wait until it says `Tunnel ready`. Keep both terminals open. You need internet for the tunnel.
+If you see **ngrok tunnel took too long to connect**, press `Ctrl+C` and run `npx expo start --tunnel` again. Wait until it says `Tunnel ready`. Keep both terminals open. You need internet for the tunnel.
 
 **PowerShell blocks `Activate.ps1`**  
 Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, then activate again.
