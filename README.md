@@ -2,14 +2,20 @@
 
 **Author:** Alejandro Noris Gil
 
-This app lets you take a photo of a bookshelf (or pick one from your gallery). It finds the books in the photo and matches them to a catalog.
+This application allows users to capture a photo of a bookshelf (or upload one from their gallery), processes the image to detect individual book spines, and matches the extracted text against a realistically messy catalog.
 
-You need **two programs running at the same time**:
+**Tech Stack Overview:**
+
+Backend: Django, SQLite, local YOLO model (for spine detection), OpenRouter API (VLM for text extraction), and thefuzz for fuzzy matching.
+
+Frontend: React Native (Expo) and Expo Camera.
+
+You will need **two programs running at the same time**:
 
 1. The **backend** (Django) — analyzes the photo
 2. The **frontend** (Expo) — the screen you use in the browser
 
-Follow the steps in order. Do not skip any step please.
+Please follow these steps sequentially to ensure a smooth local setup. If you already have Python, Node, Git, and an OpenRouter key, you can jump to **Quick start**.
 
 ## Required versions (read this first)
 
@@ -32,6 +38,70 @@ node --version
 ```
 
 You want something like `Python 3.12.x` or `Python 3.13.x`, and `v20.x.x` or `v22.x.x`. If Python is `3.11` or lower, or Node is `v18` or lower, install the versions above first. Do not keep going.
+
+---
+
+## Quick start (if you already have the requirements)
+
+Use this if you already have **Python 3.12+**, **Node 20+**, **Git**, and an **OpenRouter API key**. If not, skip to **Step 0**.
+
+You still need **two terminals**. On Mac/Linux, use `python3` if `python` is not found.
+
+**Terminal 1 — backend**
+
+```bash
+git clone https://github.com/Alexnoris/Shelfie-Take-Home-Task.git
+cd Shelfie-Take-Home-Task/backend
+```
+
+Windows:
+
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+Mac / Linux:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+python3 -m pip install -r requirements.txt
+```
+
+Create `backend/.env` with:
+
+```env
+OPENROUTER_API_KEY=paste_your_key_here
+OPENROUTER_MODEL=openai/gpt-4o-mini
+```
+
+Then:
+
+```bash
+python manage.py migrate
+python manage.py load_catalog
+python manage.py runserver
+```
+
+(Mac / Linux: `python3 manage.py ...` if needed.)
+
+Leave this terminal running.
+
+**Terminal 2 — frontend**
+
+```bash
+cd Shelfie-Take-Home-Task/frontend
+npm install
+npx expo start --tunnel
+```
+
+Copy the `https://` URL and paste it in your **phone** browser. That is the recommended way to use the app.
+
+For example: `https://xxxx.exp.direct`
+
+If anything fails, please use the full steps below.
 
 ---
 
