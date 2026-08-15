@@ -101,6 +101,8 @@ Copy the `https://` URL and paste it in your **phone** browser. That is the reco
 
 For example: `https://xxxx.exp.direct`
 
+There are two sample book photos in `backend/api/img/` (`dun.jpg` and `hob.jpg`) if you want to use them to try the app.
+
 If anything fails, please use the full steps below.
 
 ---
@@ -420,6 +422,18 @@ With **both** terminals still running:
 
 Use a clear photo of book spines. Titles that are not in the catalog will not match.
 
+### Sample photos to test with
+
+In `backend/api/img/` there are two test images you can use if you do not have a bookshelf or books nearby:
+
+- `dun.jpg`
+- `hob.jpg`
+
+You can:
+
+- send them to your phone and pick them with **Choose from gallery**, or
+- open an image on your computer screen and **Take a photo** of it with the phone.
+
 The computer browser works too, but the camera and gallery feel much better on a phone.
 
 ---
@@ -506,6 +520,7 @@ Shelfie-Take-Home-Task/
 │   ├── manage.py
 │   ├── requirements.txt
 │   └── api/                 # Views, YOLO, VLM, catalog command
+│       └── img/             # Sample photos: dun.jpg, hob.jpg
 └── frontend/
     ├── package.json
     └── src/
