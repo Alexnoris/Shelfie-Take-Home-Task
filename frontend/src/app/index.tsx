@@ -42,16 +42,14 @@ type ProcessPhotoResponse = {
 };
 
 function WelcomeScreen({
-    cameraAvailable,
     busy,
     statusText,
     onTakePhoto,
     onPickImage,
 }: {
-    cameraAvailable: boolean;
     busy?: boolean;
     statusText?: string | null;
-    onTakePhoto?: () => void;
+    onTakePhoto: () => void;
     onPickImage: (image: string | Blob) => void;
 }) {
     const [catalogOpen, setCatalogOpen] = useState(false);
@@ -68,32 +66,29 @@ function WelcomeScreen({
             </Pressable>
             <Text style={styles.welcomeTitle}>Scan your bookshelf</Text>
             <Text style={styles.welcomeSubtitle}>
-                {cameraAvailable
-                    ? 'Take a photo of your shelf, or pick one from your gallery. We’ll find the books and match them to the catalog.'
-                    : 'The camera isn’t available in this browser. Choose a shelf photo from your gallery instead.'}
+                Take a photo of your shelf, or pick one from your gallery. We’ll find the books and match them to the catalog.
             </Text>
-            {cameraAvailable && onTakePhoto ? (
-                <Pressable
-                    accessibilityRole="button"
-                    disabled={busy}
-                    hitSlop={16}
-                    onPress={onTakePhoto}
-                    style={({ pressed }) => [
-                        styles.permissionButton,
-                        styles.takePhotoButton,
-                        pressed && styles.permissionButtonPressed,
-                    ]}>
-                    <Text style={styles.permissionButtonText}>
-                        {busy ? 'Opening camera...' : 'Take a photo'}
-                    </Text>
-                </Pressable>
-            ) : null}
+            <Pressable
+                accessibilityRole="button"
+                disabled={busy}
+                hitSlop={16}
+                onPress={onTakePhoto}
+                style={({ pressed }) => [
+                    styles.permissionButton,
+                    styles.takePhotoButton,
+                    pressed && styles.permissionButtonPressed,
+                ]}>
+                <Text style={styles.permissionButtonText}>
+                    {busy ? 'Opening camera...' : 'Take a photo'}
+                </Text>
+            </Pressable>
             <GalleryButton
                 label="Choose from gallery"
-                variant={cameraAvailable ? 'secondary' : 'primary'}
+                variant="secondary"
                 onPicked={onPickImage}
             />
             {statusText ? <Text style={styles.statusText}>{statusText}</Text> : null}
+            <Text style={styles.creditText}>Alejandro Noris Gil</Text>
             <CatalogModal visible={catalogOpen} onClose={() => setCatalogOpen(false)} />
         </View>
     );
@@ -340,7 +335,7 @@ export default function IndexScreen() {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [apiResponse, setApiResponse] = useState<ProcessPhotoResponse | null>(null);
     const [cameraArmed, setCameraArmed] = useState(false);
-    const [showMenu, setShowMenu] = useState(false);
+    const [showMenu, setShowMenu] = useState(true);
 
     useEffect(() => {
         if (!permission?.granted) {
@@ -481,27 +476,13 @@ export default function IndexScreen() {
         );
     }
 
-    if (!isWebCameraSupported()) {
+    if (showMenu || !permission?.granted) {
         return (
             <WelcomeScreen
-                cameraAvailable={false}
-                onPickImage={analyzeImage}
-            />
-        );
-    }
-
-    if (!permission) {
-        return <View style={styles.container} />;
-    }
-
-    if (showMenu || !permission.granted) {
-        return (
-            <WelcomeScreen
-                cameraAvailable
                 busy={busy}
                 statusText={statusText}
                 onTakePhoto={
-                    permission.granted
+                    permission?.granted
                         ? () => setShowMenu(false)
                         : handleGrantPermission
                 }
@@ -863,4 +844,12 @@ const styles = StyleSheet.create({
     },
     secondaryPermissionButtonText: { color: '#111111', fontWeight: '600', fontSize: 16 },
     statusText: { marginTop: 16, textAlign: 'center', color: '#60646C', maxWidth: 360, lineHeight: 22 },
+    creditText: {
+        position: 'absolute',
+        bottom: 24,
+        textAlign: 'center',
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#8A8D93',
+    },
 });
